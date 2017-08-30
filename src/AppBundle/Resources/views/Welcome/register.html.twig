@@ -1,0 +1,16 @@
+{% extends "::base.html.twig" %}
+
+{% block title %}AppBundle:Welcome:register{% endblock %}
+
+{% block body %}
+  {% if errorMsg %}
+    <div>{{ errorMsg }}</div>
+  {% endif %}
+
+  {% if formView %}
+    {{ form_start(formView) }}
+      {{ form_widget(formView) }}
+      <button type="submit" id="register_submit">Register</button>
+    {{ form_end(formView) }}
+  {% endif %}
+{% endblock %}

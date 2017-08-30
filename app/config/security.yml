@@ -1,0 +1,39 @@
+# To get started with security, check out the documentation:
+# https://symfony.com/doc/current/security.html
+security:
+
+    providers:
+        DB:
+            id: AppBundle\Services\Security\UserProvider
+
+    access_control:
+        - { path: ^/(|login|register|activation|resend-activation|lost-password|password-reset), roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        # - { path: ^/, roles: ROLE_USER }
+
+    firewalls:
+        # disables authentication for assets and the profiler, adapt it according to your needs
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        main:
+            anonymous: ~
+
+            form_login:
+                login_path: login
+                check_path: login
+                default_target_path: homepage
+                username_parameter: login[uniqueId]
+                password_parameter: login[password]
+                csrf_parameter: login[_token]
+                csrf_token_id: dca6fedf8ee4ef6e2ebdf05aebadd3b1c0972a37
+                csrf_token_generator: security.csrf.token_manager
+            
+            logout:
+                path: /logout
+                target: /
+    
+    encoders:
+        AppBundle\Model\UserModel:
+            algorithm: bcrypt
+            cost: 15

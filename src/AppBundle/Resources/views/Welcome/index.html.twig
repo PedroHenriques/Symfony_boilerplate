@@ -1,0 +1,9 @@
+{% extends "::base.html.twig" %}
+
+{% block title %}AppBundle:Welcome:index{% endblock %}
+
+{% block body %}
+  <h1>Welcome to the Welcome:index page</h1>
+  <p><a href='{{ path('login') }}'>Login</a></p>
+  <p><a href='{{ path('register') }}'>Register</a></p>
+{% endblock %}

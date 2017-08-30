@@ -1,0 +1,56 @@
+# Learn more about services, parameters and containers at
+# https://symfony.com/doc/current/service_container.html
+parameters:
+    # time, in hours, before an activation token expires
+    activationTokenDuration: 72
+    # time, in hours, before a password reset token expires
+    resetPwTokenDuration: 2
+
+    # parameters used by the EmailHandler class
+    EmailHandler:
+        # the email address shown in the 'from' of emails sent
+        from: 'your@email.com'
+        # the name of your website, used in the subject of the activation and password reset emails
+        websiteName: 'YOUR WEBSITE NAME'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        # automatically injects dependencies in your services
+        autowire: true
+        # automatically registers your services as commands, event subscribers, etc.
+        autoconfigure: true
+        # this means you cannot fetch services directly from the container via $container->get()
+        # if you need to do this, you can override this setting on individual services
+        public: false
+
+    # makes classes in src/AppBundle available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    AppBundle\:
+        resource: '../../src/AppBundle/*'
+        # you can exclude directories or files
+        # but if a service is unused, it's removed anyway
+        exclude: '../../src/AppBundle/{Entity,Repository,Tests}'
+
+    # controllers are imported separately to make sure they're public
+    # and have a tag that allows actions to type-hint services
+    AppBundle\Controller\:
+        resource: '../../src/AppBundle/Controller'
+        public: true
+        tags: ['controller.service_arguments']
+    
+    # inform Symfony's dependency injection system to instantiate the custome UserProvider
+    # when a UserProviderInterface is requested
+    Symfony\Component\Security\Core\User\UserProviderInterface: '@AppBundle\Services\Security\UserProvider'
+
+    # inform Symfony's dependency injection system to instantiate DbHandler
+    # when a DbInterface is requested
+    AppBundle\Services\DbInterface:
+        alias: AppBundle\Services\DbHandler
+        public: true
+    
+    # inform Symfony's dependency injection system to instantiate EmailHandler
+    # when a EmailInterface is requested
+    AppBundle\Services\EmailInterface:
+        alias: AppBundle\Services\EmailHandler
+        public: true

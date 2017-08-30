@@ -1,0 +1,16 @@
+{% extends "::base.html.twig" %}
+
+{% block title %}AppBundle:Welcome:LostPassword{% endblock %}
+
+{% block body %}
+  {% if errorMsg %}
+    <div id="errorMsg"><p>{{ errorMsg }}</p></div>
+  {% endif %}
+
+  {% if formView %}
+    {{ form_start(formView) }}
+      {{ form_widget(formView) }}
+      <button type="submit" id="resetpw_submit">Reset Password</button>
+    {{ form_end(formView) }}
+  {% endif %}
+{% endblock %}

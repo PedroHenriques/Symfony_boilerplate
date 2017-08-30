@@ -1,0 +1,25 @@
+{% extends "::base.html.twig" %}
+
+{% block title %}AppBundle:Welcome:login{% endblock %}
+
+{% block body %}
+  {% if errorMsg %}
+    <div id='errorMsg'><p>{{ errorMsg }}</p></div>
+  {% endif %}
+
+  {% if accountDisabled %}
+    <div id='accountDisabledMsg'>
+      <p>This account hasn't been activated after the registration process.</p>
+      <p>An email was sent to this account's email address with the link to activate the account.</p>
+      <p>In order to resend the activation email <a href="{{ url('resendActivation', {'e': userEmail}) }}">click here</a></p>
+    </div>
+  {% endif %}
+
+  {% if formView %}
+    {{ form_start(formView) }}
+      {{ form_widget(formView) }}
+      <button type="submit" id="login_submit">login</button>
+    {{ form_end(formView) }}
+    <p><a href="{{ path('lostPassword') }}">Lost password</a></p>
+  {% endif %}
+{% endblock %}

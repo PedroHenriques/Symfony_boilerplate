@@ -1,0 +1,13 @@
+<h3>{{ websiteName }} - Account Activation</h3>
+
+<p>Thank you for creating an account with {{ websiteName }}.</p>
+<br/>
+<p>You are one step away from being able to start using your account.</p>
+<p>To complete your registration please activate your account by clicking on 
+the link below, or copy and paste it onto your browser's address bar.</p>
+<br/>
+<p><a href="{{ url('activation', {'e':email, 't':token})|raw }}">
+{{ url('activation', {'e':email, 't':token})|raw }}</a></p>
+<br/>
+<p>Best regards,<br/>
+{{ websiteName }} Team.</p>

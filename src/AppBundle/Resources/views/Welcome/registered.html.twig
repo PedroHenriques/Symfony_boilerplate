@@ -1,0 +1,17 @@
+{% extends "::base.html.twig" %}
+
+{% block title %}AppBundle:Welcome:registered{% endblock %}
+
+{% block body %}
+  <div id="successMsg">
+    <p>Thank you for creating an account with YOUR WEBSITE NAME.</p>
+    <br>
+    <p>To complete your registration please activate your account by clicking on the link in the email sent to {{ email }}.</p>
+
+    {% if emailSent == false %}
+      <br/>
+      <p class="error">Unfortunatly the account activation email could not be sent to the provided email address.<br/>
+      Please <a href="{{ url('resendActivation') }}">click here</a> to resend the activation email.</p>
+    {% endif %}
+  </div>
+{% endblock %}
