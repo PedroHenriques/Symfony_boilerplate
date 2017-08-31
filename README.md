@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/PedroHenriques/Symfony_boilerplate.svg?branch=master)](https://travis-ci.org/PedroHenriques/Symfony_boilerplate)
+
 # Symfony 3.3.* Boilerplate (Startup Kit)
 
 ## Setup
