@@ -37,9 +37,7 @@ firewalls:
 
 ### Test Environment Setup
 
-1. Create the project's test database - this boilerplate is configured to look for a database named `phpunit_test`, but you can use whatever name you want
-
-2. Update the project's test database information in the `phpunit.xml.dist` file under
+1. Update the project's test database and webserver information in the `phpunit.xml.dist` file under
 
 ```xml
 <php>
@@ -47,11 +45,14 @@ firewalls:
     <var name="DB_USER" value="root" />
     <var name="DB_PASSWD" value="" />
     <var name="DB_DBNAME" value="phpunit_test" />
+
+    <var name="DOMAIN_NAME" value="localhost" />
+    <var name="DOMAIN_PORT" value="8000" />
     ...
 </php>
 ```
 
-3. Update the project's test database information in the `config_test.yml` file under
+2. Update the project's test database information in the `config_test.yml` file under
 
 ```yml
 doctrine:
@@ -68,6 +69,8 @@ doctrine:
       collate: utf8_unicode_ci
       engine: InnoDB
 ```
+
+3. Create the project's test database, matching the name inserted in step 1
 
 4. Run the database migrations on your test database using `php bin/console doctrine:migrations:migrate --env=test`
 

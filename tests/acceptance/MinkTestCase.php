@@ -14,7 +14,7 @@ abstract class MinkTestCase extends TestCase {
   }
 
   private static $mink;
-  private static $baseUrl = 'http://localhost/app_test.php';
+  private static $baseUrl;
   private static $mailCatcher;
   private static $pdo;
   private $connection;
@@ -37,6 +37,8 @@ abstract class MinkTestCase extends TestCase {
   /** {@inheritDoc} */
   public static function setUpBeforeClass() {
     parent::setUpBeforeClass();
+
+    self::$baseUrl = "http://{$GLOBALS['DOMAIN_NAME']}:{$GLOBALS['DOMAIN_PORT']}/app_test.php";
 
     if (self::$mink === null) {
       self::$mink = new Mink([

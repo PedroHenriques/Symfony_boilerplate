@@ -1,0 +1,37 @@
+dist: trusty
+sudo: false
+language: php
+
+php:
+  - 7.1
+  - 7.2
+
+notifications:
+  email:
+    on_success: always
+    on_failure: always
+
+branches:
+  only:
+    - master
+
+services:
+  - mysql
+
+before_install:
+  - composer self-update
+  - mysql -e 'CREATE DATABASE phpunit_test;'
+
+install:
+  - travis_retry composer install --no-interaction
+  - travis_retry gem install mailcatcher
+
+before_script:
+  - php bin/console doctrine:migrations:migrate -n --env=test
+  - php bin/console cache:clear --env=test --no-debug --no-warmup && php bin/console cache:warmup --env=test
+  - php -S localhost:8000 -t web/ &
+  - mailcatcher
+  - sleep 3
+
+script:
+  - phpunit tests/unit && phpunit tests/integration && phpunit --testdox tests/acceptance
