@@ -92,6 +92,25 @@ class DbHandlerTest extends BaseIntegrationCase {
     $this->assertEquals('ROLE_USER', $actualValue[1][0]['role']);
   }
 
+  public function testSelectIsCallingDoctrineDbalCorrectlyWhenSpecificArgsToFetchallAreProvided() {
+    $query = 'SELECT id, userName, email, password, isActive, created FROM users WHERE id = :id';
+
+    $paramData = [
+      ['id' => [1, \PDO::PARAM_INT]],
+      ['id' => [2, \PDO::PARAM_INT]],
+    ];
+
+    $actualValue = $this->dbHandler->select($query, $paramData, [\PDO::FETCH_COLUMN, 2]);
+
+    $expectedValue = [
+      [$this->fixtures['users'][0]['email']],
+      [$this->fixtures['users'][1]['email']],
+    ];
+
+    $this->assertEquals(2, count($actualValue));
+    $this->assertEquals($expectedValue, $actualValue);
+  }
+
   public function testChangeIsCallingDoctrineDbalCorrectlyForANonInsertQuery() {
     $query = 'UPDATE users SET email = :email WHERE id = :id';
 

@@ -59,12 +59,18 @@ class DbHandler implements DbInterface {
 
   /**
   * {@inheritDoc}
-  * The return array has the values of fetchAll(\PDO::FETCH_ASSOC) for each
+  *
+  * @param array $fetchAllArgs The arguments that will be passed to fetchAll()
+  *                            using array unpacking.
+  *                            Defaults to [\PDO::FETCH_ASSOC].
+  *
+  * The return array has the values of fetchAll() for each
   * execution of the prepared statement in separate indexes.
   *
   * @throws \Exception with an error message if any step fails.
   */
-  public function select(string $query, array $paramData): array {
+  public function select(string $query, array $paramData,
+  array $fetchAllArgs = [\PDO::FETCH_ASSOC]): array {
     if (preg_match('/^\(?SELECT /i', $query) !== 1) {
       throw new \Exception("The query '${query}' is not a SELECT statement.");
     }
@@ -95,7 +101,7 @@ class DbHandler implements DbInterface {
           'The query\'s execution failed for the execution #'.($i+1)
         );
       } else {
-        $selectedData = $prepStatement->fetchAll(\PDO::FETCH_ASSOC);
+        $selectedData = $prepStatement->fetchAll(...$fetchAllArgs);
 
         if ($selectedData === false) {
           throw new \Exception(

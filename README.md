@@ -164,6 +164,14 @@ public function changeInBulk(string $query, array $paramData): array;
 
 which wraps a transaction around a call to `change()`.
 
+It also adds an optional argument to `select()` with the syntax
+
+```php
+public function select(string $query, array $paramData, array $fetchAllArgs = [\PDO::FETCH_ASSOC]): array;
+```
+
+which allows controll over the arguments that will be passed to `fetchAll()`, using array unpacking.
+
 **NOTE:** If you create an alternative implementation of `DbInterface` update the autowire configuration in `services.yml` under
 
 ```yml

@@ -229,6 +229,52 @@ class DbHandlerTest extends TestCase {
     $this->assertEquals($expectedValue, $actualValue);
   }
 
+  public function testSelectIfASpecificSetOfArgsForFetchallIsProvidedItShouldReturnTheResultsOfFetchallUsingThoseArgs() {
+    $query = 'SELECT id, userName FROM users WHERE id=:id AND email=:email';
+    $paramData = [
+      [
+        'id' => [10, \PDO::PARAM_INT],
+        'email' => ['test@test.com', \PDO::PARAM_STR],
+      ],
+      [
+        'id' => [4, \PDO::PARAM_INT],
+        'email' => ['p@p.com', \PDO::PARAM_STR],
+      ],
+    ];
+
+    $this->connMock->expects($this->once())
+      ->method('prepare')
+      ->with($query)
+      ->willReturn($this->statementMock);
+    
+    $this->statementMock->expects($this->exactly(4))
+      ->method('bindValue')
+      ->withConsecutive(
+        ['id', 10, \PDO::PARAM_INT],
+        ['email', 'test@test.com', \PDO::PARAM_STR],
+        ['id', 4, \PDO::PARAM_INT],
+        ['email', 'p@p.com', \PDO::PARAM_STR]
+      )
+      ->willReturn(true);
+    
+    $this->statementMock->expects($this->exactly(2))
+      ->method('execute')
+      ->with()
+      ->willReturn(true);
+    
+    $expectedValue = ['Pedro', 'João'];
+
+    $this->statementMock->expects($this->exactly(2))
+      ->method('fetchAll')
+      ->with(\PDO::FETCH_COLUMN, 1)
+      ->will($this->onConsecutiveCalls('Pedro', 'João'));
+    
+    $dbHandler = new DbHandler($this->connMock);
+    $actualValue = $dbHandler->select($query, $paramData, [\PDO::FETCH_COLUMN, 1]);
+
+    $this->assertEquals($expectedValue, $actualValue);
+  }
+
   public function testSelectIfTheQueryIsNotASelectItShouldThrowAnExceptionWithAnErrorMsg() {
     $query = "UPDATE users SET email = :email WHERE id = :id";
 
