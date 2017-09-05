@@ -243,7 +243,7 @@ To execute these tests run `composer test -- tests/unit` from the project's root
 
 #### Integration tests
 
-- **Requisits**: a running database server
+- **Requirements**: a running database server
 
 The test classes can extend `tests/integration/BaseIntegrationCase.php` which provides integration with dbunit, allowing the fixtures to be inserted into the test database before each individual test.
 This class extends `Symfony\Bundle\FrameworkBundle\Test\WebTestCase.php` giving access to symfony's client and container if needed.
@@ -265,7 +265,7 @@ To execute these tests run `composer test -- tests/integration` from the project
 
 #### Acceptance tests
 
-- **Requisits**: a running database server + a running webserver + [a running mailcatcher server](https://mailcatcher.me/ "Mailcatcher's Homepage")
+- **Requirements**: a running database server + a running webserver + [a running mailcatcher server](https://mailcatcher.me/ "Mailcatcher's Homepage")
 
 The test classes can extend `tests/acceptance/MinkTestCase.php` which provides integration with dbunit and Mink, allowing the fixtures to be inserted into the test database before each individual test and the use of web browsers to interact with the front-end of the website.
 

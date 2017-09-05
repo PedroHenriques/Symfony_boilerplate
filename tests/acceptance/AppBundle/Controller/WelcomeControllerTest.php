@@ -748,4 +748,19 @@ class WelcomeControllerTest extends MinkTestCase {
     $this->assertEquals($this->getUrlFromUri('/login'), $minkSessionOne->getCurrentUrl());
     $this->assertEquals($this->getUrlFromUri('/login'), $minkSessionTwo->getCurrentUrl());
   }
+
+  public function testAnAuthenticatedUserCanLogout() {
+    $minkSession = $this->getSession();
+    $this->authenticateUser($minkSession, $this->fixtures['users'][1]['email'], 'password');
+
+    $this->visitUri($minkSession, '/logout');
+    $this->assertEquals($this->getUrlFromUri('/'), $minkSession->getCurrentUrl());
+
+    $this->visitUri($minkSession, '/login');
+    $page = $minkSession->getPage();
+    $form = $page->find('named', ['id_or_name', 'login']);
+    $this->assertNotNull($form);
+    $this->assertEquals('post', $form->getAttribute('method'));
+    $this->assertEquals($this->getUrlFromUri('/login'), $form->getAttribute('action'));
+  }
 }

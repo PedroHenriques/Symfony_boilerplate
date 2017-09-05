@@ -43,6 +43,10 @@ services:
     # when a UserProviderInterface is requested
     Symfony\Component\Security\Core\User\UserProviderInterface: '@AppBundle\Services\Security\UserProvider'
 
+    # inform Symfony's dependency injection system to instantiate UserModel
+    # when a UserInterface is requested
+    Symfony\Component\Security\Core\User\UserInterface: '@AppBundle\Model\UserModel'
+
     # inform Symfony's dependency injection system to instantiate DbHandler
     # when a DbInterface is requested
     AppBundle\Services\DbInterface:

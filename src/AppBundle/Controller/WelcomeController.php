@@ -2,7 +2,7 @@
 
 namespace AppBundle\Controller;
 
-use AppBundle\Model\{UserModelFactory, UserModel};
+use AppBundle\Model\UserModelFactory;
 use AppBundle\Form\{RegisterType, LoginType, LostPwType, PwResetType};
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
