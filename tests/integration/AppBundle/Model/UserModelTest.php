@@ -6,7 +6,7 @@ require_once(dirname(dirname(__DIR__)).'/BaseIntegrationCase.php');
 
 use tests\integration\BaseIntegrationCase;
 use AppBundle\Model\UserModel;
-use AppBundle\Services\{Utils, EmailHandler};
+use AppBundle\Services\EmailHandler;
 use AppBundle\Exceptions\TokenExpiredException;
 
 class UserModelTest extends BaseIntegrationCase {
@@ -67,7 +67,6 @@ class UserModelTest extends BaseIntegrationCase {
     $this->container = $client->getContainer();
 
     $dbHandler = $this->container->get('service_container')->get('AppBundle\Services\DbInterface');
-    $utils = new Utils();
     $emailHandler = new EmailHandler(
       $this->createCustomMailer(),
       new \Symfony\Bundle\TwigBundle\TwigEngine(
@@ -79,7 +78,7 @@ class UserModelTest extends BaseIntegrationCase {
     );
     $encoder = $this->container->get('security.password_encoder');
 
-    $this->userModel = new UserModel($dbHandler, $utils, $emailHandler, $encoder, $this->container);
+    $this->userModel = new UserModel($dbHandler, $emailHandler, $encoder, $this->container);
   }
 
   public function testPopulatefromdbIsQueryingTheDbAndPopulatingTheUsermodelProperties() {

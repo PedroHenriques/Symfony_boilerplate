@@ -5,7 +5,6 @@ namespace tests\integration\AppBundle\Services;
 require_once(dirname(dirname(__DIR__)).'/BaseIntegrationCase.php');
 
 use tests\integration\BaseIntegrationCase;
-use AppBundle\Services\Utils;
 use AppBundle\Model\{UserModel, UserModelFactory};
 
 class DbHandlerTest extends BaseIntegrationCase {
@@ -268,12 +267,11 @@ class DbHandlerTest extends BaseIntegrationCase {
   }
 
   public function testChangefrommodelIsCallingDoctrineDbalCorrectlyWhenATransactionIsNotRequested() {
-    $utils = new Utils();
     $emailHandler = $this->container->get('service_container')->get('AppBundle\Services\EmailInterface');
     $encoder = $this->container->get('security.password_encoder');
 
-    $userOne = new UserModel($this->dbHandler, $utils, $emailHandler, $encoder, $this->container);
-    $userTwo = new UserModel($this->dbHandler, $utils, $emailHandler, $encoder, $this->container);
+    $userOne = new UserModel($this->dbHandler, $emailHandler, $encoder, $this->container);
+    $userTwo = new UserModel($this->dbHandler, $emailHandler, $encoder, $this->container);
 
     $userOneData = $this->fixtures['users'][0];
     $userOneData['email'] = 'new.user@one.email';
@@ -313,12 +311,11 @@ class DbHandlerTest extends BaseIntegrationCase {
   }
   
   public function testChangefrommodelIsCallingDoctrineDbalCorrectlyWhenATransactionIsRequestedAndEverythingSucceeds() {
-    $utils = new Utils();
     $emailHandler = $this->container->get('service_container')->get('AppBundle\Services\EmailInterface');
     $encoder = $this->container->get('security.password_encoder');
 
-    $userOne = new UserModel($this->dbHandler, $utils, $emailHandler, $encoder, $this->container);
-    $userTwo = new UserModel($this->dbHandler, $utils, $emailHandler, $encoder, $this->container);
+    $userOne = new UserModel($this->dbHandler, $emailHandler, $encoder, $this->container);
+    $userTwo = new UserModel($this->dbHandler, $emailHandler, $encoder, $this->container);
 
     $userOneData = $this->fixtures['users'][0];
     $userOneData['email'] = 'new.user@one.email';
@@ -358,12 +355,11 @@ class DbHandlerTest extends BaseIntegrationCase {
   }
   
   public function testChangefrommodelIsCallingDoctrineDbalCorrectlyWhenATransactionIsRequestedAndNotEverythingSucceeds() {
-    $utils = new Utils();
     $emailHandler = $this->container->get('service_container')->get('AppBundle\Services\EmailInterface');
     $encoder = $this->container->get('security.password_encoder');
 
-    $userOne = new UserModel($this->dbHandler, $utils, $emailHandler, $encoder, $this->container);
-    $userTwo = new UserModel($this->dbHandler, $utils, $emailHandler, $encoder, $this->container);
+    $userOne = new UserModel($this->dbHandler, $emailHandler, $encoder, $this->container);
+    $userTwo = new UserModel($this->dbHandler, $emailHandler, $encoder, $this->container);
 
     $userOneData = $this->fixtures['users'][0];
     $userOneData['email'] = 'new.user@one.email';
@@ -426,7 +422,6 @@ class DbHandlerTest extends BaseIntegrationCase {
 
     $modelFactory = new UserModelFactory(
       $this->dbHandler,
-      new Utils(),
       $this->container->get('service_container')->get('AppBundle\Services\EmailInterface'),
       $this->container->get('security.password_encoder'),
       $this->container

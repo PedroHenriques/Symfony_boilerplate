@@ -14,7 +14,6 @@ class UserModelTest extends TestCase {
     parent::setUp();
 
     $this->dbInterfaceMock = $this->createMock(DbInterface::class);
-    $this->utilsMock = $this->createMock(Utils::class);
     $this->emailInterfaceMock = $this->createMock(EmailInterface::class);
     $this->encoderMock = $this->createMock(UserPasswordEncoderInterface::class);
     $this->containerMock = $this->createMock(CustomUserModelContainer::class);
@@ -34,9 +33,12 @@ class UserModelTest extends TestCase {
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        "SELECT u.id, u.userName, u.email, u.password, u.isActive, u.created, ur.role FROM users as u JOIN users_roles as ur ON ur.id = u.roleId WHERE u.${uniqueCol} = :${uniqueCol}",
+        [$bindData]
+      )
       ->willReturn([[[
-        'id' => '1',
+        'id' => '2',
         'userName' => 'test',
         'email' => 'test@test.com',
         'password' => 'testpassword',
@@ -45,11 +47,11 @@ class UserModelTest extends TestCase {
         'created' => $created
       ]]]);
     
-    $userModel = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $userModel = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $actualValue = $userModel->populateFromDb($bindData);
 
     $this->assertEquals(null, $actualValue);
-    $this->assertEquals(1, $userModel->getId());
+    $this->assertEquals(2, $userModel->getId());
     $this->assertEquals('test', $userModel->getUserName());
     $this->assertEquals('test@test.com', $userModel->getEmail());
     $this->assertEquals('testpassword', $userModel->getPassword());
@@ -62,14 +64,13 @@ class UserModelTest extends TestCase {
     $this->expectException(\Exception::class);
     $this->expectExceptionMessage('The number of elements in $bindData isn\'t valid.');
 
-    $uniqueCol = 'email';
     $uniqueId = 'test@test.com';
     $bindData = [
-      $uniqueCol => [$uniqueId, \PDO::PARAM_STR],
+      'email' => [$uniqueId, \PDO::PARAM_STR],
       'anotherCol' => [$uniqueId, \PDO::PARAM_STR],
     ];
     
-    $userModel = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $userModel = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $userModel->populateFromDb($bindData);
   }
 
@@ -80,16 +81,15 @@ class UserModelTest extends TestCase {
     $uniqueId = 'test@test.com';
     $bindData = [$uniqueCol => [$uniqueId, \PDO::PARAM_STR]];
 
-    $query = 'SELECT u.id, u.userName, u.email, u.password, u.isActive, u.created, ur.role '.
-      "FROM users as u JOIN users_roles as ur ON ur.id = u.roleId WHERE u.${uniqueCol} = :${uniqueCol}";
-    $paramData = [$bindData];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        "SELECT u.id, u.userName, u.email, u.password, u.isActive, u.created, ur.role FROM users as u JOIN users_roles as ur ON ur.id = u.roleId WHERE u.${uniqueCol} = :${uniqueCol}",
+        [$bindData]
+      )
       ->will($this->throwException(new \Exception));
     
-    $userModel = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $userModel = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $userModel->populateFromDb($bindData);
 
     $this->assertEquals(null, $userModel->getId());
@@ -109,16 +109,15 @@ class UserModelTest extends TestCase {
     $uniqueId = 'test@test.com';
     $bindData = [$uniqueCol => [$uniqueId, \PDO::PARAM_STR]];
 
-    $query = 'SELECT u.id, u.userName, u.email, u.password, u.isActive, u.created, ur.role '.
-      "FROM users as u JOIN users_roles as ur ON ur.id = u.roleId WHERE u.${uniqueCol} = :${uniqueCol}";
-    $paramData = [$bindData];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        "SELECT u.id, u.userName, u.email, u.password, u.isActive, u.created, ur.role FROM users as u JOIN users_roles as ur ON ur.id = u.roleId WHERE u.${uniqueCol} = :${uniqueCol}",
+        [$bindData]
+      )
       ->willReturn([[]]);
     
-    $userModel = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $userModel = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $userModel->populateFromDb($bindData);
 
     $this->assertEquals(null, $userModel->getId());
@@ -138,26 +137,23 @@ class UserModelTest extends TestCase {
     $uniqueId = 'test@test.com';
     $bindData = [$uniqueCol => [$uniqueId, \PDO::PARAM_STR]];
 
-    $query = 'SELECT u.id, u.userName, u.email, u.password, u.isActive, u.created, ur.role '.
-      "FROM users as u JOIN users_roles as ur ON ur.id = u.roleId WHERE u.${uniqueCol} = :${uniqueCol}";
-    $paramData = [$bindData];
-
-    $created = time() - 86400;
-
     $this->dbInterfaceMock->expects($this->exactly(2))
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        "SELECT u.id, u.userName, u.email, u.password, u.isActive, u.created, ur.role FROM users as u JOIN users_roles as ur ON ur.id = u.roleId WHERE u.${uniqueCol} = :${uniqueCol}",
+        [$bindData]
+      )
       ->willReturn([[[
-        'id' => '1',
+        'id' => '2',
         'userName' => 'test',
         'email' => 'test@test.com',
         'password' => 'testpassword',
         'isActive' => '1',
         'role' => 'ROLE_USER',
-        'created' => $created
+        'created' => time() - 86400
       ]]]);
     
-    $userModel = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $userModel = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $userModel->populateFromDb($bindData);
     $userModel->populateFromDb($bindData);
   }
@@ -169,24 +165,21 @@ class UserModelTest extends TestCase {
     $hashedPw = 'hashedtestpassword';
     $created = time();
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setUserName($userName);
     $user->setEmail($email);
     $user->setPlainPassword($plainPw);
     $user->setCreated($created);
 
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        '(select count(id) as count from users where userName=:userName) union all (select count(id) as count from users where email=:email)',
+        [[
+          'userName' => [$userName, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->WillReturn([[
         ['count' => 0],
         ['count' => 0],
@@ -197,35 +190,21 @@ class UserModelTest extends TestCase {
       ->with($user, $plainPw)
       ->willReturn($hashedPw);
     
-    $token = 'test token';
-    $tokenGenTs = time();
-    $tokenHash = 'hashofthetesttoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn([
-        'token' => $token,
-        'ts' => $tokenGenTs
-      ]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($token)
-      ->willReturn($tokenHash);
-    
-    $query = 'INSERT INTO users '.
-      "VALUES(null,:userName,:email,:password,0,1,'${tokenHash}',${tokenGenTs},null,null,:created)";
-    $paramNames = ['userName', 'email', 'password', 'created'];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('changeFromModel')
-      ->with($query, $paramNames, [$user], false)
+      ->with(
+        $this->matchesRegularExpression(
+          "/^INSERT INTO users VALUES\(null,:userName,:email,:password,0,1,'[[:ascii:]]+',\d+,null,null,:created\)$/"
+        ),
+        ['userName', 'email', 'password', 'created'],
+        [$user],
+        false
+      )
       ->willReturn([1]);
     
     $this->emailInterfaceMock->expects($this->once())
       ->method('activationEmail')
-      ->with($email, $token)
+      ->with($email, $this->matchesRegularExpression('/^[[:ascii:]]+$/'))
       ->willReturn(true);
     
     $actualValue = $user->register();
@@ -241,22 +220,19 @@ class UserModelTest extends TestCase {
     $userName = 'test username';
     $email = 'test@test.com';
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setUserName($userName);
     $user->setEmail($email);
 
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        '(select count(id) as count from users where userName=:userName) union all (select count(id) as count from users where email=:email)',
+        [[
+          'userName' => [$userName, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->will($this->throwException(new \Exception));
     
     $user->register();
@@ -269,22 +245,19 @@ class UserModelTest extends TestCase {
     $userName = 'test username';
     $email = 'test@test.com';
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setUserName($userName);
     $user->setEmail($email);
 
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        '(select count(id) as count from users where userName=:userName) union all (select count(id) as count from users where email=:email)',
+        [[
+          'userName' => [$userName, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->WillReturn([[
         ['count' => 1],
         ['count' => 0],
@@ -300,22 +273,19 @@ class UserModelTest extends TestCase {
     $userName = 'test username';
     $email = 'test@test.com';
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setUserName($userName);
     $user->setEmail($email);
 
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        '(select count(id) as count from users where userName=:userName) union all (select count(id) as count from users where email=:email)',
+        [[
+          'userName' => [$userName, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->WillReturn([[
         ['count' => 0],
         ['count' => 1],
@@ -331,22 +301,19 @@ class UserModelTest extends TestCase {
     $userName = 'test username';
     $email = 'test@test.com';
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setUserName($userName);
     $user->setEmail($email);
 
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        '(select count(id) as count from users where userName=:userName) union all (select count(id) as count from users where email=:email)',
+        [[
+          'userName' => [$userName, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->WillReturn([[
         ['count' => 1],
         ['count' => 1],
@@ -362,25 +329,21 @@ class UserModelTest extends TestCase {
     $userName = 'test username';
     $email = 'test@test.com';
     $plainPw = 'test plain password';
-    $hashedPw = 'hashedtestpassword';
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setUserName($userName);
     $user->setEmail($email);
     $user->setPlainPassword($plainPw);
 
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        '(select count(id) as count from users where userName=:userName) union all (select count(id) as count from users where email=:email)',
+        [[
+          'userName' => [$userName, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->WillReturn([[
         ['count' => 0],
         ['count' => 0],
@@ -394,164 +357,6 @@ class UserModelTest extends TestCase {
     $user->register();
   }
 
-  public function testRegisterIfCreatingTheActivationTokenThrowsAnExceptionItShouldLetItBubbleUp() {
-    $this->expectException(\Exception::class);
-    $this->expectExceptionMessage('generateToken test exception msg');
-
-    $userName = 'test username';
-    $email = 'test@test.com';
-    $plainPw = 'test plain password';
-    $hashedPw = 'hashedtestpassword';
-
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
-    $user->setUserName($userName);
-    $user->setEmail($email);
-    $user->setPlainPassword($plainPw);
-
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $this->dbInterfaceMock->expects($this->once())
-      ->method('select')
-      ->with($query, $paramData)
-      ->WillReturn([[
-        ['count' => 0],
-        ['count' => 0],
-      ]]);
-    
-    $this->encoderMock->expects($this->once())
-      ->method('encodePassword')
-      ->with($user, $plainPw)
-      ->willReturn($hashedPw);
-    
-    $token = 'test token';
-    $tokenGenTs = time();
-    $tokenHash = 'hashofthetesttoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->will($this->throwException(new \Exception('generateToken test exception msg')));
-    
-    $user->register();
-  }
-
-  public function testRegisterIfTheActivationTokenHashIsntCreatedItShouldThrowAnException() {
-    $this->expectException(\Exception::class);
-
-    $userName = 'test username';
-    $email = 'test@test.com';
-    $plainPw = 'test plain password';
-    $hashedPw = 'hashedtestpassword';
-
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
-    $user->setUserName($userName);
-    $user->setEmail($email);
-    $user->setPlainPassword($plainPw);
-
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $this->dbInterfaceMock->expects($this->once())
-      ->method('select')
-      ->with($query, $paramData)
-      ->WillReturn([[
-        ['count' => 0],
-        ['count' => 0],
-      ]]);
-    
-    $this->encoderMock->expects($this->once())
-      ->method('encodePassword')
-      ->with($user, $plainPw)
-      ->willReturn($hashedPw);
-    
-    $token = 'test token';
-    $tokenGenTs = time();
-    $tokenHash = 'hashofthetesttoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn([
-        'token' => $token,
-        'ts' => $tokenGenTs
-      ]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($token)
-      ->willReturn('');
-    
-    $user->register();
-  }
-
-  public function testRegisterIfCreatingTheActivationTokenHashThrowsAnExceptionItShouldLetItBubbleUp() {
-    $this->expectException(\Exception::class);
-
-    $userName = 'test username';
-    $email = 'test@test.com';
-    $plainPw = 'test plain password';
-    $hashedPw = 'hashedtestpassword';
-
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
-    $user->setUserName($userName);
-    $user->setEmail($email);
-    $user->setPlainPassword($plainPw);
-
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $this->dbInterfaceMock->expects($this->once())
-      ->method('select')
-      ->with($query, $paramData)
-      ->WillReturn([[
-        ['count' => 0],
-        ['count' => 0],
-      ]]);
-    
-    $this->encoderMock->expects($this->once())
-      ->method('encodePassword')
-      ->with($user, $plainPw)
-      ->willReturn($hashedPw);
-    
-    $token = 'test token';
-    $tokenGenTs = time();
-    $tokenHash = 'hashofthetesttoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn([
-        'token' => $token,
-        'ts' => $tokenGenTs
-      ]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($token)
-      ->will($this->throwException(new \Exception));
-    
-    $user->register();
-  }
-
   public function testRegisterIfTheInsertQueryThrowsAnExceptionItShouldLetItBubbleUp() {
     $this->expectException(\Exception::class);
 
@@ -561,24 +366,21 @@ class UserModelTest extends TestCase {
     $hashedPw = 'hashedtestpassword';
     $created = time();
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setUserName($userName);
     $user->setEmail($email);
     $user->setPlainPassword($plainPw);
     $user->setCreated($created);
 
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        '(select count(id) as count from users where userName=:userName) union all (select count(id) as count from users where email=:email)',
+        [[
+          'userName' => [$userName, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->WillReturn([[
         ['count' => 0],
         ['count' => 0],
@@ -588,31 +390,17 @@ class UserModelTest extends TestCase {
       ->method('encodePassword')
       ->with($user, $plainPw)
       ->willReturn($hashedPw);
-    
-    $token = 'test token';
-    $tokenGenTs = time();
-    $tokenHash = 'hashofthetesttoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn([
-        'token' => $token,
-        'ts' => $tokenGenTs
-      ]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($token)
-      ->willReturn($tokenHash);
-    
-    $query = 'INSERT INTO users '.
-      "VALUES(null,:userName,:email,:password,0,1,'${tokenHash}',${tokenGenTs},null,null,:created)";
-    $paramNames = ['userName', 'email', 'password', 'created'];
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('changeFromModel')
-      ->with($query, $paramNames, [$user], false)
+      ->with(
+        $this->matchesRegularExpression(
+          "/^INSERT INTO users VALUES\(null,:userName,:email,:password,0,1,'[[:ascii:]]+',\d+,null,null,:created\)$/"
+        ),
+        ['userName', 'email', 'password', 'created'],
+        [$user],
+        false
+      )
       ->will($this->throwException(new \Exception));
     
     $user->register();
@@ -627,24 +415,21 @@ class UserModelTest extends TestCase {
     $hashedPw = 'hashedtestpassword';
     $created = time();
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setUserName($userName);
     $user->setEmail($email);
     $user->setPlainPassword($plainPw);
     $user->setCreated($created);
 
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        '(select count(id) as count from users where userName=:userName) union all (select count(id) as count from users where email=:email)',
+        [[
+          'userName' => [$userName, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->WillReturn([[
         ['count' => 0],
         ['count' => 0],
@@ -655,30 +440,16 @@ class UserModelTest extends TestCase {
       ->with($user, $plainPw)
       ->willReturn($hashedPw);
     
-    $token = 'test token';
-    $tokenGenTs = time();
-    $tokenHash = 'hashofthetesttoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn([
-        'token' => $token,
-        'ts' => $tokenGenTs
-      ]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($token)
-      ->willReturn($tokenHash);
-    
-    $query = 'INSERT INTO users '.
-      "VALUES(null,:userName,:email,:password,0,1,'${tokenHash}',${tokenGenTs},null,null,:created)";
-    $paramNames = ['userName', 'email', 'password', 'created'];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('changeFromModel')
-      ->with($query, $paramNames, [$user], false)
+      ->with(
+        $this->matchesRegularExpression(
+          "/^INSERT INTO users VALUES\(null,:userName,:email,:password,0,1,'[[:ascii:]]+',\d+,null,null,:created\)$/"
+        ),
+        ['userName', 'email', 'password', 'created'],
+        [$user],
+        false
+      )
       ->willReturn([null]);
     
     $user->register();
@@ -691,24 +462,21 @@ class UserModelTest extends TestCase {
     $hashedPw = 'hashedtestpassword';
     $created = time();
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setUserName($userName);
     $user->setEmail($email);
     $user->setPlainPassword($plainPw);
     $user->setCreated($created);
 
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        '(select count(id) as count from users where userName=:userName) union all (select count(id) as count from users where email=:email)',
+        [[
+          'userName' => [$userName, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->WillReturn([[
         ['count' => 0],
         ['count' => 0],
@@ -719,41 +487,26 @@ class UserModelTest extends TestCase {
       ->with($user, $plainPw)
       ->willReturn($hashedPw);
     
-    $token = 'test token';
-    $tokenGenTs = time();
-    $tokenHash = 'hashofthetesttoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn([
-        'token' => $token,
-        'ts' => $tokenGenTs
-      ]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($token)
-      ->willReturn($tokenHash);
-    
-    $query = 'INSERT INTO users '.
-      "VALUES(null,:userName,:email,:password,0,1,'${tokenHash}',${tokenGenTs},null,null,:created)";
-    $paramNames = ['userName', 'email', 'password', 'created'];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('changeFromModel')
-      ->with($query, $paramNames, [$user], false)
+      ->with(
+        $this->matchesRegularExpression(
+          "/^INSERT INTO users VALUES\(null,:userName,:email,:password,0,1,'[[:ascii:]]+',\d+,null,null,:created\)$/"
+        ),
+        ['userName', 'email', 'password', 'created'],
+        [$user],
+        false
+      )
       ->willReturn([1]);
     
     $this->emailInterfaceMock->expects($this->once())
       ->method('activationEmail')
-      ->with($email, $token)
+      ->with($email, $this->matchesRegularExpression('/^[[:ascii:]]+$/'))
       ->willReturn(false);
     
     $actualValue = $user->register();
     
     $this->assertEquals($hashedPw, $user->getPassword());
-
     $this->assertEquals(false, $actualValue);
   }
 
@@ -766,24 +519,21 @@ class UserModelTest extends TestCase {
     $hashedPw = 'hashedtestpassword';
     $created = time();
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setUserName($userName);
     $user->setEmail($email);
     $user->setPlainPassword($plainPw);
     $user->setCreated($created);
 
-    $query = '(select count(id) as count from users where userName=:userName)'.
-      'union all (select count(id) as count from users where email=:email)';
-    $paramData = [
-      [
-        'userName' => [$userName, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        '(select count(id) as count from users where userName=:userName) union all (select count(id) as count from users where email=:email)',
+        [[
+          'userName' => [$userName, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->WillReturn([[
         ['count' => 0],
         ['count' => 0],
@@ -794,35 +544,21 @@ class UserModelTest extends TestCase {
       ->with($user, $plainPw)
       ->willReturn($hashedPw);
     
-    $token = 'test token';
-    $tokenGenTs = time();
-    $tokenHash = 'hashofthetesttoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn([
-        'token' => $token,
-        'ts' => $tokenGenTs
-      ]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($token)
-      ->willReturn($tokenHash);
-    
-    $query = 'INSERT INTO users '.
-      "VALUES(null,:userName,:email,:password,0,1,'${tokenHash}',${tokenGenTs},null,null,:created)";
-    $paramNames = ['userName', 'email', 'password', 'created'];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('changeFromModel')
-      ->with($query, $paramNames, [$user], false)
+      ->with(
+        $this->matchesRegularExpression(
+          "/^INSERT INTO users VALUES\(null,:userName,:email,:password,0,1,'[[:ascii:]]+',\d+,null,null,:created\)$/"
+        ),
+        ['userName', 'email', 'password', 'created'],
+        [$user],
+        false
+      )
       ->willReturn([1]);
     
     $this->emailInterfaceMock->expects($this->once())
       ->method('activationEmail')
-      ->with($email, $token)
+      ->with($email, $this->matchesRegularExpression('/^[[:ascii:]]+$/'))
       ->will($this->throwException(new \Exception));
     
     $user->register();
@@ -830,36 +566,22 @@ class UserModelTest extends TestCase {
 
   public function testActivateItShouldQueryTheDbForAnInactiveUserWithTheProvidedEmailThenCheckIfTheProvidedTokenIsActiveAndIsValidThenActivateTheUsersAccountInTheDbAndReturnVoid() {
     $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $activationHash = 'hashedtoken';
-    $activationHashGenTs = time() - 24*3600;
-    $tokenDuration = 72;
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'activationHash' => $activationHash,
-        'activationHashGenTs' => $activationHashGenTs,
+        'activationHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'activationHashGenTs' => time() - 24*3600,
       ]]]);
     
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('activationTokenDuration')
-      ->willReturn($tokenDuration);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($expectedToken, $activationHash)
-      ->willReturn(true);
+      ->willReturn(72);
 
     $query = 'UPDATE users SET isActive = 1, activationHash = null, activationHashGenTs = null WHERE email = :email';
     $paramData = [
@@ -873,9 +595,9 @@ class UserModelTest extends TestCase {
       ->with($query, $paramData)
       ->willReturn([1]);
     
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
-    $actualValue = $user->activate($expectedToken, $this->routerInterfaceMock);
+    $actualValue = $user->activate('supersecrettoken', $this->routerInterfaceMock);
 
     $this->assertEquals(null, $actualValue);
   }
@@ -885,27 +607,18 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage("There is no inactive user with email 'test@test.com'.");
 
     $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $activationHash = 'hashedtoken';
-    $activationHashGenTs = time() - 24*3600;
-    $tokenDuration = 72;
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[]]);
     
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
-    $user->activate($expectedToken, $this->routerInterfaceMock);
+    $user->activate('supersecrettoken', $this->routerInterfaceMock);
   }
 
   public function testActivateIfDbinterfaceSelectThrowsAnExceptionItShouldLetItBubbleUp() {
@@ -913,23 +626,18 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage('select test exception msg');
 
     $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->will($this->throwException(new \Exception('select test exception msg')));
     
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
-    $user->activate($expectedToken, $this->routerInterfaceMock);
+    $user->activate('supersecrettoken', $this->routerInterfaceMock);
   }
 
   public function testActivateIfTheTokenIsNotValidItShouldThrowAnExceptionWithAnErrorMsg() {
@@ -937,71 +645,21 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage("The activation token provided for the email 'test@test.com' is not correct.");
 
     $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $activationHash = 'hashedtoken';
-    $activationHashGenTs = time() - 24*3600;
-    $tokenDuration = 72;
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'activationHash' => $activationHash,
-        'activationHashGenTs' => $activationHashGenTs,
+        'activationHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'activationHashGenTs' => time() - 24*3600,
       ]]]);
     
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($expectedToken, $activationHash)
-      ->willReturn(false);
-    
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
-    $user->activate($expectedToken, $this->routerInterfaceMock);
-  }
-
-  public function testActivateIfCheckingIfTheTokenIsValidThrowsAnExceptionItShouldLetItBubbleUp() {
-    $this->expectException(\Exception::class);
-    $this->expectExceptionMessage('isHashValid test exception msg');
-
-    $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $activationHash = 'hashedtoken';
-    $activationHashGenTs = time() - 24*3600;
-    $tokenDuration = 72;
-
-    $this->dbInterfaceMock->expects($this->once())
-      ->method('select')
-      ->with($query, $paramData)
-      ->willReturn([[[
-        'activationHash' => $activationHash,
-        'activationHashGenTs' => $activationHashGenTs,
-      ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($expectedToken, $activationHash)
-      ->will($this->throwException(new \Exception('isHashValid test exception msg')));
-    
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
-    $user->setEmail($expectedEmail);
-    $user->activate($expectedToken, $this->routerInterfaceMock);
+    $user->activate('invalidsupersecrettoken', $this->routerInterfaceMock);
   }
 
   public function testActivateIfContainerGetparameterThrowsAnExceptionItShouldLetItBubbleUp() {
@@ -1009,40 +667,26 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage('getParameter test exception msg');
 
     $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $activationHash = 'hashedtoken';
-    $activationHashGenTs = time() - 90*3600;
-    $tokenDuration = 72;
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'activationHash' => $activationHash,
-        'activationHashGenTs' => $activationHashGenTs,
+        'activationHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'activationHashGenTs' => time() - 90*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($expectedToken, $activationHash)
-      ->willReturn(true);
     
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('activationTokenDuration')
       ->will($this->throwException(new \Exception('getParameter test exception msg')));
     
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
-    $user->activate($expectedToken, $this->routerInterfaceMock);
+    $user->activate('supersecrettoken', $this->routerInterfaceMock);
   }
 
   public function testActivateIfTheQueryToActivateTheUserFailsItShouldThrowAnExceptionWithAnErrorMsg() {
@@ -1050,104 +694,68 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage("Failed to UPDATE the user with email 'test@test.com' with the active account values.");
 
     $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $activationHash = 'hashedtoken';
-    $activationHashGenTs = time() - 24*3600;
-    $tokenDuration = 72;
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'activationHash' => $activationHash,
-        'activationHashGenTs' => $activationHashGenTs,
+        'activationHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'activationHashGenTs' => time() - 24*3600,
       ]]]);
     
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('activationTokenDuration')
-      ->willReturn($tokenDuration);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($expectedToken, $activationHash)
-      ->willReturn(true);
+      ->willReturn(72);
 
-    $query = 'UPDATE users SET isActive = 1, activationHash = null, activationHashGenTs = null WHERE email = :email';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-    
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET isActive = 1, activationHash = null, activationHashGenTs = null WHERE email = :email',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([0]);
     
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
-    $user->activate($expectedToken, $this->routerInterfaceMock);
+    $user->activate('supersecrettoken', $this->routerInterfaceMock);
   }
 
   public function testActivateIfDbinterfaceChangeThrowsAnExceptionItShouldLetItBubbleUp() {
     $this->expectException(\Exception::class);
 
     $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $activationHash = 'hashedtoken';
-    $activationHashGenTs = time() - 24*3600;
-    $tokenDuration = 72;
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'activationHash' => $activationHash,
-        'activationHashGenTs' => $activationHashGenTs,
+        'activationHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'activationHashGenTs' => time() - 24*3600,
       ]]]);
     
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('activationTokenDuration')
-      ->willReturn($tokenDuration);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($expectedToken, $activationHash)
-      ->willReturn(true);
+      ->willReturn(72);
 
-    $query = 'UPDATE users SET isActive = 1, activationHash = null, activationHashGenTs = null WHERE email = :email';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-    
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET isActive = 1, activationHash = null, activationHashGenTs = null WHERE email = :email',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->will($this->throwException(new \Exception));
     
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
-    $user->activate($expectedToken, $this->routerInterfaceMock);
+    $user->activate('supersecrettoken', $this->routerInterfaceMock);
   }
 
   public function testActivateIfTheTokenIsExpiredItShouldGenerateAndProcessANewTokenAndThrowAnExceptionWithAnErrorMsg() {
@@ -1155,136 +763,50 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage('The activation link used is expired. A new activation link was sent to this account\'s email address.');
 
     $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $activationHash = 'hashedtoken';
-    $activationHashGenTs = time() - 90*3600;
-    $tokenDuration = 72;
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'activationHash' => $activationHash,
-        'activationHashGenTs' => $activationHashGenTs,
+        'activationHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'activationHashGenTs' => time() - 90*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($expectedToken, $activationHash)
-      ->willReturn(true);
     
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('activationTokenDuration')
-      ->willReturn($tokenDuration);
+      ->willReturn(72);
     
-    $newToken = 'newsecrettoken';
-    $newTokenTs = time();
-    $newTokenHash = 'newhashedtoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn(['token' => $newToken, 'ts' => $newTokenTs]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($newToken)
-      ->willReturn($newTokenHash);
-    
-    $query = 'UPDATE users SET isActive = 0, activationHash = :hash, activationHashGenTs = :hashTs WHERE email = :email';
-    $paramData = [
-      [
-        'hash' => [$newTokenHash, \PDO::PARAM_STR],
-        'hashTs' => [$newTokenTs, \PDO::PARAM_INT],
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET isActive = 0, activationHash = :hash, activationHashGenTs = :hashTs WHERE email = :email',
+        $this->callback(function($subject) use ($expectedEmail) {
+          return(
+            (count($subject) === 1) &&
+            (['hash', 'hashTs', 'email'] == array_keys($subject[0])) &&
+            (preg_match('/^[[:ascii:]]+$/', $subject[0]['hash'][0]) === 1) &&
+            ($subject[0]['hash'][1] === \PDO::PARAM_STR) &&
+            (preg_match('/^\d+$/', $subject[0]['hashTs'][0]) === 1) &&
+            ($subject[0]['hashTs'][1] === \PDO::PARAM_INT) &&
+            ($expectedEmail === $subject[0]['email'][0]) &&
+            ($subject[0]['email'][1] === \PDO::PARAM_STR)
+          );
+        })
+      )
       ->willReturn([1]);
 
     $this->emailInterfaceMock->expects($this->once())
       ->method('activationEmail')
-      ->with($expectedEmail, $newToken)
+      ->with($expectedEmail, $this->matchesRegularExpression('/^[[:ascii:]]+$/'))
       ->willReturn(true);
     
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
-    $user->activate($expectedToken, $this->routerInterfaceMock);
-  }
-
-  public function testActivateIfTheTokenIsExpiredAndTheHashOfTheNewTokenFailsToBeCreatedItShouldThrowAnExceptionWithAnErrorMsg() {
-    $this->expectException(\Exception::class);
-    $this->expectExceptionMessage(
-      'The activation link used is expired. An attempt was made to send a new activation link to '.
-      'this account\'s email address, but the email could not be sent. Please <a href="resendLink">click here</a> to resend the activation email.'
-    );
-
-    $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $activationHash = 'hashedtoken';
-    $activationHashGenTs = time() - 90*3600;
-    $tokenDuration = 72;
-
-    $this->dbInterfaceMock->expects($this->once())
-      ->method('select')
-      ->with($query, $paramData)
-      ->willReturn([[[
-        'activationHash' => $activationHash,
-        'activationHashGenTs' => $activationHashGenTs,
-      ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($expectedToken, $activationHash)
-      ->willReturn(true);
-    
-    $this->containerMock->expects($this->once())
-      ->method('getParameter')
-      ->with('activationTokenDuration')
-      ->willReturn($tokenDuration);
-    
-    $newToken = 'newsecrettoken';
-    $newTokenTs = time();
-    $newTokenHash = 'newhashedtoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn(['token' => $newToken, 'ts' => $newTokenTs]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($newToken)
-      ->will($this->throwException(new \Exception('The hash of the new token couldn\'t be generated.')));
-    
-    $this->routerInterfaceMock->expects($this->once())
-      ->method('generate')
-      ->with('resendActivation', ['e' => $expectedEmail])
-      ->willReturn('resendLink');
-    
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
-    $user->setEmail($expectedEmail);
-    $user->activate($expectedToken, $this->routerInterfaceMock);
+    $user->activate('supersecrettoken', $this->routerInterfaceMock);
   }
 
   public function testActivateIfTheTokenIsExpiredAndTheDbFailsToBeUpdatedItShouldThrowAnExceptionWithAnErrorMsg() {
@@ -1295,63 +817,40 @@ class UserModelTest extends TestCase {
     );
 
     $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $activationHash = 'hashedtoken';
-    $activationHashGenTs = time() - 90*3600;
-    $tokenDuration = 72;
-
+    
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'activationHash' => $activationHash,
-        'activationHashGenTs' => $activationHashGenTs,
+        'activationHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'activationHashGenTs' => time() - 90*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($expectedToken, $activationHash)
-      ->willReturn(true);
     
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('activationTokenDuration')
-      ->willReturn($tokenDuration);
+      ->willReturn(72);
     
-    $newToken = 'newsecrettoken';
-    $newTokenTs = time();
-    $newTokenHash = 'newhashedtoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn(['token' => $newToken, 'ts' => $newTokenTs]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($newToken)
-      ->willReturn($newTokenHash);
-    
-    $query = 'UPDATE users SET isActive = 0, activationHash = :hash, activationHashGenTs = :hashTs WHERE email = :email';
-    $paramData = [
-      [
-        'hash' => [$newTokenHash, \PDO::PARAM_STR],
-        'hashTs' => [$newTokenTs, \PDO::PARAM_INT],
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET isActive = 0, activationHash = :hash, activationHashGenTs = :hashTs WHERE email = :email',
+        $this->callback(function($subject) use ($expectedEmail) {
+          return(
+            (count($subject) === 1) &&
+            (['hash', 'hashTs', 'email'] == array_keys($subject[0])) &&
+            (preg_match('/^[[:ascii:]]+$/', $subject[0]['hash'][0]) === 1) &&
+            ($subject[0]['hash'][1] === \PDO::PARAM_STR) &&
+            (preg_match('/^\d+$/', $subject[0]['hashTs'][0]) === 1) &&
+            ($subject[0]['hashTs'][1] === \PDO::PARAM_INT) &&
+            ($expectedEmail === $subject[0]['email'][0]) &&
+            ($subject[0]['email'][1] === \PDO::PARAM_STR)
+          );
+        })
+      )
       ->will($this->throwException(new \Exception));
 
     $this->routerInterfaceMock->expects($this->once())
@@ -1359,9 +858,9 @@ class UserModelTest extends TestCase {
       ->with('resendActivation', ['e' => $expectedEmail])
       ->willReturn('resendLink');
     
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
-    $user->activate($expectedToken, $this->routerInterfaceMock);
+    $user->activate('supersecrettoken', $this->routerInterfaceMock);
   }
 
   public function testActivateIfTheTokenIsExpiredAndTheEmailFailsToSendItShouldThrowAnExceptionWithAnErrorMsg() {
@@ -1372,68 +871,45 @@ class UserModelTest extends TestCase {
     );
 
     $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $activationHash = 'hashedtoken';
-    $activationHashGenTs = time() - 90*3600;
-    $tokenDuration = 72;
-
+    
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'activationHash' => $activationHash,
-        'activationHashGenTs' => $activationHashGenTs,
+        'activationHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'activationHashGenTs' => time() - 90*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($expectedToken, $activationHash)
-      ->willReturn(true);
     
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('activationTokenDuration')
-      ->willReturn($tokenDuration);
+      ->willReturn(72);
     
-    $newToken = 'newsecrettoken';
-    $newTokenTs = time();
-    $newTokenHash = 'newhashedtoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn(['token' => $newToken, 'ts' => $newTokenTs]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($newToken)
-      ->willReturn($newTokenHash);
-    
-    $query = 'UPDATE users SET isActive = 0, activationHash = :hash, activationHashGenTs = :hashTs WHERE email = :email';
-    $paramData = [
-      [
-        'hash' => [$newTokenHash, \PDO::PARAM_STR],
-        'hashTs' => [$newTokenTs, \PDO::PARAM_INT],
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET isActive = 0, activationHash = :hash, activationHashGenTs = :hashTs WHERE email = :email',
+        $this->callback(function($subject) use ($expectedEmail) {
+          return(
+            (count($subject) === 1) &&
+            (['hash', 'hashTs', 'email'] == array_keys($subject[0])) &&
+            (preg_match('/^[[:ascii:]]+$/', $subject[0]['hash'][0]) === 1) &&
+            ($subject[0]['hash'][1] === \PDO::PARAM_STR) &&
+            (preg_match('/^\d+$/', $subject[0]['hashTs'][0]) === 1) &&
+            ($subject[0]['hashTs'][1] === \PDO::PARAM_INT) &&
+            ($expectedEmail === $subject[0]['email'][0]) &&
+            ($subject[0]['email'][1] === \PDO::PARAM_STR)
+          );
+        })
+      )
       ->willReturn([1]);
 
     $this->emailInterfaceMock->expects($this->once())
       ->method('activationEmail')
-      ->with($expectedEmail, $newToken)
+      ->with($expectedEmail, $this->matchesRegularExpression('/^[[:ascii:]]+$/'))
       ->willReturn(false);
 
     $this->routerInterfaceMock->expects($this->once())
@@ -1441,9 +917,9 @@ class UserModelTest extends TestCase {
       ->with('resendActivation', ['e' => $expectedEmail])
       ->willReturn('resendLink');
     
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
-    $user->activate($expectedToken, $this->routerInterfaceMock);
+    $user->activate('supersecrettoken', $this->routerInterfaceMock);
   }
 
   public function testActivateIfIfTheTokenIsExpiredAndTheProcessingOfANewTokenFailsAndTheRouterThrowsAnExceptionToSendItShouldLetItBubbleUp() {
@@ -1451,68 +927,45 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage('router exception message bubbled up');
 
     $expectedEmail = 'test@test.com';
-    $expectedToken = 'supersecrettoken';
-
-    $query = 'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $activationHash = 'hashedtoken';
-    $activationHashGenTs = time() - 90*3600;
-    $tokenDuration = 72;
-
+    
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT activationHash, activationHashGenTs FROM users WHERE email = :email AND isActive = 0',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'activationHash' => $activationHash,
-        'activationHashGenTs' => $activationHashGenTs,
+        'activationHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'activationHashGenTs' => time() - 90*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($expectedToken, $activationHash)
-      ->willReturn(true);
     
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('activationTokenDuration')
-      ->willReturn($tokenDuration);
+      ->willReturn(72);
     
-    $newToken = 'newsecrettoken';
-    $newTokenTs = time();
-    $newTokenHash = 'newhashedtoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn(['token' => $newToken, 'ts' => $newTokenTs]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($newToken)
-      ->willReturn($newTokenHash);
-    
-    $query = 'UPDATE users SET isActive = 0, activationHash = :hash, activationHashGenTs = :hashTs WHERE email = :email';
-    $paramData = [
-      [
-        'hash' => [$newTokenHash, \PDO::PARAM_STR],
-        'hashTs' => [$newTokenTs, \PDO::PARAM_INT],
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET isActive = 0, activationHash = :hash, activationHashGenTs = :hashTs WHERE email = :email',
+        $this->callback(function($subject) use ($expectedEmail) {
+          return(
+            (count($subject) === 1) &&
+            (['hash', 'hashTs', 'email'] == array_keys($subject[0])) &&
+            (preg_match('/^[[:ascii:]]+$/', $subject[0]['hash'][0]) === 1) &&
+            ($subject[0]['hash'][1] === \PDO::PARAM_STR) &&
+            (preg_match('/^\d+$/', $subject[0]['hashTs'][0]) === 1) &&
+            ($subject[0]['hashTs'][1] === \PDO::PARAM_INT) &&
+            ($expectedEmail === $subject[0]['email'][0]) &&
+            ($subject[0]['email'][1] === \PDO::PARAM_STR)
+          );
+        })
+      )
       ->willReturn([1]);
 
     $this->emailInterfaceMock->expects($this->once())
       ->method('activationEmail')
-      ->with($expectedEmail, $newToken)
+      ->with($expectedEmail, $this->matchesRegularExpression('/^[[:ascii:]]+$/'))
       ->willReturn(false);
 
     $this->routerInterfaceMock->expects($this->once())
@@ -1520,60 +973,47 @@ class UserModelTest extends TestCase {
       ->with('resendActivation', ['e' => $expectedEmail])
       ->will($this->throwException(new \Exception('router exception message bubbled up')));
     
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
-    $user->activate($expectedToken, $this->routerInterfaceMock);
+    $user->activate('supersecrettoken', $this->routerInterfaceMock);
   }
 
   public function testRegenactivationtokenItShouldCheckThatTheUserAccountIsInactiveThenProcessANewActivationTokenAndReturnVoid() {
     $expectedEmail = 'test@test.com';
 
-    $query = 'SELECT count(id) as count FROM users WHERE email = :email AND activationHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with()
+      ->with(
+        'SELECT count(id) as count FROM users WHERE email = :email AND activationHash IS NOT NULL',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[['count' => 1]]]);
-
-    $newToken = 'newsecrettoken';
-    $newTokenTs = time();
-    $newTokenHash = 'newhashedtoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn(['token' => $newToken, 'ts' => $newTokenTs]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($newToken)
-      ->willReturn($newTokenHash);
-    
-    $query = 'UPDATE users SET isActive = 0, activationHash = :hash, activationHashGenTs = :hashTs WHERE email = :email';
-    $paramData = [
-      [
-        'hash' => [$newTokenHash, \PDO::PARAM_STR],
-        'hashTs' => [$newTokenTs, \PDO::PARAM_INT],
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET isActive = 0, activationHash = :hash, activationHashGenTs = :hashTs WHERE email = :email',
+        $this->callback(function($subject) use ($expectedEmail) {
+          return(
+            (count($subject) === 1) &&
+            (['hash', 'hashTs', 'email'] == array_keys($subject[0])) &&
+            (preg_match('/^[[:ascii:]]+$/', $subject[0]['hash'][0]) === 1) &&
+            ($subject[0]['hash'][1] === \PDO::PARAM_STR) &&
+            (preg_match('/^\d+$/', $subject[0]['hashTs'][0]) === 1) &&
+            ($subject[0]['hashTs'][1] === \PDO::PARAM_INT) &&
+            ($expectedEmail === $subject[0]['email'][0]) &&
+            ($subject[0]['email'][1] === \PDO::PARAM_STR)
+          );
+        })
+      )
       ->willReturn([1]);
 
     $this->emailInterfaceMock->expects($this->once())
       ->method('activationEmail')
-      ->with($expectedEmail, $newToken)
+      ->with($expectedEmail, $this->matchesRegularExpression('/^[[:ascii:]]+$/'))
       ->willReturn(true);
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
     $actualValue = $user->regenActivationToken();
 
@@ -1588,19 +1028,15 @@ class UserModelTest extends TestCase {
       "No user was found in the DB with email '${expectedEmail}' and with an activation token."
     );
 
-    $query = 'SELECT count(id) as count FROM users WHERE email = :email AND activationHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with()
+      ->with(
+        'SELECT count(id) as count FROM users WHERE email = :email AND activationHash IS NOT NULL',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[['count' => 0]]]);
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
     $user->regenActivationToken();
   }
@@ -1610,52 +1046,39 @@ class UserModelTest extends TestCase {
 
     $expectedEmail = 'test@test.com';
 
-    $query = 'SELECT count(id) as count FROM users WHERE email = :email AND activationHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with()
+      ->with(
+        'SELECT count(id) as count FROM users WHERE email = :email AND activationHash IS NOT NULL',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[['count' => 1]]]);
-
-    $newToken = 'newsecrettoken';
-    $newTokenTs = time();
-    $newTokenHash = 'newhashedtoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn(['token' => $newToken, 'ts' => $newTokenTs]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($newToken)
-      ->willReturn($newTokenHash);
-    
-    $query = 'UPDATE users SET isActive = 0, activationHash = :hash, activationHashGenTs = :hashTs WHERE email = :email';
-    $paramData = [
-      [
-        'hash' => [$newTokenHash, \PDO::PARAM_STR],
-        'hashTs' => [$newTokenTs, \PDO::PARAM_INT],
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET isActive = 0, activationHash = :hash, activationHashGenTs = :hashTs WHERE email = :email',
+        $this->callback(function($subject) use ($expectedEmail) {
+          return(
+            (count($subject) === 1) &&
+            (['hash', 'hashTs', 'email'] == array_keys($subject[0])) &&
+            (preg_match('/^[[:ascii:]]+$/', $subject[0]['hash'][0]) === 1) &&
+            ($subject[0]['hash'][1] === \PDO::PARAM_STR) &&
+            (preg_match('/^\d+$/', $subject[0]['hashTs'][0]) === 1) &&
+            ($subject[0]['hashTs'][1] === \PDO::PARAM_INT) &&
+            ($expectedEmail === $subject[0]['email'][0]) &&
+            ($subject[0]['email'][1] === \PDO::PARAM_STR)
+          );
+        })
+      )
       ->willReturn([1]);
 
     $this->emailInterfaceMock->expects($this->once())
       ->method('activationEmail')
-      ->with($expectedEmail, $newToken)
+      ->with($expectedEmail, $this->matchesRegularExpression('/^[[:ascii:]]+$/'))
       ->willReturn(false);
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
     $user->regenActivationToken();
   }
@@ -1663,52 +1086,39 @@ class UserModelTest extends TestCase {
   public function testInitpwresetprocessItShouldCallGentokensendemailAndReturnVoid() {
     $expectedEmail = 'test@test.com';
 
-    $query = 'SELECT id FROM users WHERE email = :email AND isActive = 1';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT id FROM users WHERE email = :email AND isActive = 1',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[['id' => '1']]]);
-
-    $newToken = 'newsecrettoken';
-    $newTokenTs = time();
-    $newTokenHash = 'newhashedtoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn(['token' => $newToken, 'ts' => $newTokenTs]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($newToken)
-      ->willReturn($newTokenHash);
-
-    $query = 'UPDATE users SET pwResetHash = :hash, pwResetHashGenTs = :hashTs WHERE email = :email';
-    $paramData = [
-      [
-        'hash' => [$newTokenHash, \PDO::PARAM_STR],
-        'hashTs' => [$newTokenTs, \PDO::PARAM_INT],
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET pwResetHash = :hash, pwResetHashGenTs = :hashTs WHERE email = :email',
+        $this->callback(function($subject) use ($expectedEmail) {
+          return(
+            (count($subject) === 1) &&
+            (['hash', 'hashTs', 'email'] == array_keys($subject[0])) &&
+            (preg_match('/^[[:ascii:]]+$/', $subject[0]['hash'][0]) === 1) &&
+            ($subject[0]['hash'][1] === \PDO::PARAM_STR) &&
+            (preg_match('/^\d+$/', $subject[0]['hashTs'][0]) === 1) &&
+            ($subject[0]['hashTs'][1] === \PDO::PARAM_INT) &&
+            ($expectedEmail === $subject[0]['email'][0]) &&
+            ($subject[0]['email'][1] === \PDO::PARAM_STR)
+          );
+        })
+      )
       ->willReturn([1]);
 
     $this->emailInterfaceMock->expects($this->once())
       ->method('pwResetEmail')
-      ->with($expectedEmail, $newToken)
+      ->with($expectedEmail, $this->matchesRegularExpression('/^[[:ascii:]]+$/'))
       ->willReturn(true);
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
     $actualValue = $user->initPwResetProcess();
 
@@ -1720,52 +1130,39 @@ class UserModelTest extends TestCase {
 
     $expectedEmail = 'test@test.com';
     
-    $query = 'SELECT id FROM users WHERE email = :email AND isActive = 1';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT id FROM users WHERE email = :email AND isActive = 1',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[['id' => '1']]]);
-
-    $newToken = 'newsecrettoken';
-    $newTokenTs = time();
-    $newTokenHash = 'newhashedtoken';
-
-    $this->utilsMock->expects($this->once())
-      ->method('generateToken')
-      ->with()
-      ->willReturn(['token' => $newToken, 'ts' => $newTokenTs]);
-
-    $this->utilsMock->expects($this->once())
-      ->method('createHash')
-      ->with($newToken)
-      ->willReturn($newTokenHash);
-    
-    $query = 'UPDATE users SET pwResetHash = :hash, pwResetHashGenTs = :hashTs WHERE email = :email';
-    $paramData = [
-      [
-        'hash' => [$newTokenHash, \PDO::PARAM_STR],
-        'hashTs' => [$newTokenTs, \PDO::PARAM_INT],
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET pwResetHash = :hash, pwResetHashGenTs = :hashTs WHERE email = :email',
+        $this->callback(function($subject) use ($expectedEmail) {
+          return(
+            (count($subject) === 1) &&
+            (['hash', 'hashTs', 'email'] == array_keys($subject[0])) &&
+            (preg_match('/^[[:ascii:]]+$/', $subject[0]['hash'][0]) === 1) &&
+            ($subject[0]['hash'][1] === \PDO::PARAM_STR) &&
+            (preg_match('/^\d+$/', $subject[0]['hashTs'][0]) === 1) &&
+            ($subject[0]['hashTs'][1] === \PDO::PARAM_INT) &&
+            ($expectedEmail === $subject[0]['email'][0]) &&
+            ($subject[0]['email'][1] === \PDO::PARAM_STR)
+          );
+        })
+      )
       ->willReturn([1]);
 
     $this->emailInterfaceMock->expects($this->once())
       ->method('pwResetEmail')
-      ->with($expectedEmail, $newToken)
+      ->with($expectedEmail, $this->matchesRegularExpression('/^[[:ascii:]]+$/'))
       ->willReturn(false);
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
     $user->initPwResetProcess();
   }
@@ -1776,19 +1173,15 @@ class UserModelTest extends TestCase {
     $this->expectException(\Exception::class);
     $this->expectExceptionMessage("No user was found in the DB with email '${expectedEmail}' with an active account.");
 
-    $query = 'SELECT id FROM users WHERE email = :email AND isActive = 1';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT id FROM users WHERE email = :email AND isActive = 1',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[]]);
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
     $user->initPwResetProcess();
   }
@@ -1799,80 +1192,61 @@ class UserModelTest extends TestCase {
 
     $expectedEmail = 'test@test.com';
 
-    $query = 'SELECT id FROM users WHERE email = :email AND isActive = 1';
-    $paramData = [
-      [
-        'email' => [$expectedEmail, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT id FROM users WHERE email = :email AND isActive = 1',
+        [['email' => [$expectedEmail, \PDO::PARAM_STR]]]
+      )
       ->will($this->throwException(new \Exception('select test exception msg')));
 
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($expectedEmail);
     $user->initPwResetProcess();
   }
 
   public function testResetpwItShouldQueryTheDbForThePwresethashAndItsTimestampThenCheckIfTheProvidedTokenMatchesTheDbHashThenCheckIfTheLinkIsNotExpiredThenEncodeTheNewPasswordThenUpdateTheDbWithItAndReturnVoid() {
     $email = 'test@test.com';
-    $token = 'supersecrettoken';
-    $tokenHash = 'passwordresttokenhash';
-    $tokenGenTs = time() - 0.5*3600;
-    $tokenDuration = 2;
-
-    $query = 'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'pwResetHash' => $tokenHash,
-        'pwResetHashGenTs' => $tokenGenTs,
+        'pwResetHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'pwResetHashGenTs' => time() - 0.5*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($token, $tokenHash)
-      ->willReturn(true);
 
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('resetPwTokenDuration')
-      ->willReturn($tokenDuration);
+      ->willReturn(2);
 
     $plainPw = 'newpassword';
-    $pwHash = 'newpasswordhashedversion';
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $pwHash = '$2y$15$dAw27m4ED0vKNJVpK1WZWenichZf1b7thAEL59MHzZErgJD1J5CM6';
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     
     $this->encoderMock->expects($this->once())
       ->method('encodePassword')
       ->with($user, $plainPw)
       ->willReturn($pwHash);
     
-    $query = 'UPDATE users SET password = :pw, pwResetHash = null, pwResetHashGenTs = null WHERE email = :email';
-    $paramData = [
-      [
-        'pw' => [$pwHash, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET password = :pw, pwResetHash = null, pwResetHashGenTs = null WHERE email = :email',
+        [[
+          'pw' => [$pwHash, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->willReturn([1]);
 
     $user->setEmail($email);
     $user->setPlainPassword($plainPw);
-    $actualValue = $user->resetPw($token);
+    $actualValue = $user->resetPw('supersecrettoken');
 
     $this->assertEquals(null, $actualValue);
   }
@@ -1882,26 +1256,20 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage('select test exception msg');
 
     $email = 'test@test.com';
-    $token = 'supersecrettoken';
-
-    $query = 'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->will($this->throwException(new \Exception('select test exception msg')));
 
-    $plainPw = 'newpassword';
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     
     $user->setEmail($email);
-    $user->setPlainPassword($plainPw);
-    $user->resetPw($token);
+    $user->setPlainPassword('newpassword');
+    $user->resetPw('supersecrettoken');
   }
 
   public function testResetpwIfThereIsNoUserWithTheProvidedEmailOrItHasNotInitiatedThePwResetProcessItShouldThrowAnExceptionWithACustomMsg() {
@@ -1909,25 +1277,19 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage("No user was found in the DB with email 'test@test.com' and with a password reset token.");
 
     $email = 'test@test.com';
-    $token = 'supersecrettoken';
-
-    $query = 'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[]]);
 
-    $plainPw = 'newpassword';
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($email);
-    $user->setPlainPassword($plainPw);
-    $user->resetPw($token);
+    $user->setPlainPassword('newpassword');
+    $user->resetPw('supersecrettoken');
   }
 
   public function testResetpwIfTheProvidedTokenDoesntMatchTheDbHashItShouldThrowAnExceptionWithACustomMsg() {
@@ -1935,73 +1297,23 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage("The password reset token provided for the email 'test@test.com' is not correct.");
 
     $email = 'test@test.com';
-    $token = 'supersecrettoken';
-    $tokenHash = 'passwordresttokenhash';
-    $tokenGenTs = time() - 0.5*3600;
-
-    $query = 'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'pwResetHash' => $tokenHash,
-        'pwResetHashGenTs' => $tokenGenTs,
+        'pwResetHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'pwResetHashGenTs' => time() - 0.5*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($token, $tokenHash)
-      ->willReturn(false);
 
-    $plainPw = 'newpassword';
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     
     $user->setEmail($email);
-    $user->setPlainPassword($plainPw);
-    $user->resetPw($token);
-  }
-
-  public function testResetpwIfCheckingTheTokenAgainstTheHashThrowsAnExceptionItShouldLetItBubbleUp() {
-    $this->expectException(\Exception::class);
-    $this->expectExceptionMessage('isHashValid test exception msg');
-
-    $email = 'test@test.com';
-    $token = 'supersecrettoken';
-    $tokenHash = 'passwordresttokenhash';
-    $tokenGenTs = time() - 0.5*3600;
-
-    $query = 'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
-    $this->dbInterfaceMock->expects($this->once())
-      ->method('select')
-      ->with($query, $paramData)
-      ->willReturn([[[
-        'pwResetHash' => $tokenHash,
-        'pwResetHashGenTs' => $tokenGenTs,
-      ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($token, $tokenHash)
-      ->will($this->throwException(new \Exception('isHashValid test exception msg')));
-
-    $plainPw = 'newpassword';
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
-    
-    $user->setEmail($email);
-    $user->setPlainPassword($plainPw);
-    $user->resetPw($token);
+    $user->setPlainPassword('newpassword');
+    $user->resetPw('invalidsupersecrettoken');
   }
 
   public function testResetpwIfTheParameterbagThrowsAnExceptionItShouldLetItBubbleUp() {
@@ -2009,39 +1321,26 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage('getParameter test exception msg');
 
     $email = 'test@test.com';
-    $token = 'supersecrettoken';
-    $tokenHash = 'passwordresttokenhash';
-    $tokenGenTs = time() - 4*3600;
-    $tokenDuration = 2;
-
-    $query = 'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
+    
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'pwResetHash' => $tokenHash,
-        'pwResetHashGenTs' => $tokenGenTs,
+        'pwResetHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'pwResetHashGenTs' => time() - 0.5*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($token, $tokenHash)
-      ->willReturn(true);
 
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('resetPwTokenDuration')
       ->will($this->throwException(new \Exception('getParameter test exception msg')));
     
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     $user->setEmail($email);
-    $user->resetPw($token);
+    $user->resetPw('supersecrettoken');
   }
 
   public function testResetpwIfTheTokenIsExpiredItShouldUpdateTheDbToRemoveTheTokenAndItsTimestampAndThrowATokenExpiredExceptionWithACustomMsg() {
@@ -2049,54 +1348,36 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage("The password reset token provided for the email 'test@test.com' is expired.");
 
     $email = 'test@test.com';
-    $token = 'supersecrettoken';
-    $tokenHash = 'passwordresttokenhash';
-    $tokenGenTs = time() - 4*3600;
-    $tokenDuration = 2;
-
-    $query = 'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
 
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'pwResetHash' => $tokenHash,
-        'pwResetHashGenTs' => $tokenGenTs,
+        'pwResetHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'pwResetHashGenTs' => time() - 4*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($token, $tokenHash)
-      ->willReturn(true);
 
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('resetPwTokenDuration')
-      ->willReturn($tokenDuration);
+      ->willReturn(2);
     
-    $query = 'UPDATE users SET pwResetHash = null, pwResetHashGenTs = null WHERE email = :email';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET pwResetHash = null, pwResetHashGenTs = null WHERE email = :email',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->willReturn([1]);
 
-    $plainPw = 'newpassword';
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     
     $user->setEmail($email);
-    $user->setPlainPassword($plainPw);
-    $user->resetPw($token);
+    $user->setPlainPassword('newpassword');
+    $user->resetPw('supersecrettoken');
   }
 
   public function testResetpwIfTheTokenIsExpiredAndTheQueryToRemoveTheTokenThrowsAnExceptionItShouldLetItBubbleUp() {
@@ -2104,54 +1385,36 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage('change test exception msg');
 
     $email = 'test@test.com';
-    $token = 'supersecrettoken';
-    $tokenHash = 'passwordresttokenhash';
-    $tokenGenTs = time() - 4*3600;
-    $tokenDuration = 2;
-
-    $query = 'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
+    
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'pwResetHash' => $tokenHash,
-        'pwResetHashGenTs' => $tokenGenTs,
+        'pwResetHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'pwResetHashGenTs' => time() - 4*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($token, $tokenHash)
-      ->willReturn(true);
 
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('resetPwTokenDuration')
-      ->willReturn($tokenDuration);
+      ->willReturn(2);
     
-    $query = 'UPDATE users SET pwResetHash = null, pwResetHashGenTs = null WHERE email = :email';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET pwResetHash = null, pwResetHashGenTs = null WHERE email = :email',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->will($this->throwException(new \Exception('change test exception msg')));
 
-    $plainPw = 'newpassword';
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     
     $user->setEmail($email);
-    $user->setPlainPassword($plainPw);
-    $user->resetPw($token);
+    $user->setPlainPassword('newpassword');
+    $user->resetPw('supersecrettoken');
   }
 
   public function testResetpwIfTheTokenIsExpiredAndTheQueryToRemoveTheTokenFailsItShouldIgnoreThatFailAndThrowATokenExpiredExceptionWithACustomMsg() {
@@ -2159,54 +1422,36 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage("The password reset token provided for the email 'test@test.com' is expired.");
 
     $email = 'test@test.com';
-    $token = 'supersecrettoken';
-    $tokenHash = 'passwordresttokenhash';
-    $tokenGenTs = time() - 4*3600;
-    $tokenDuration = 2;
-
-    $query = 'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
+    
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'pwResetHash' => $tokenHash,
-        'pwResetHashGenTs' => $tokenGenTs,
+        'pwResetHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'pwResetHashGenTs' => time() - 4*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($token, $tokenHash)
-      ->willReturn(true);
 
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('resetPwTokenDuration')
-      ->willReturn($tokenDuration);
+      ->willReturn(2);
     
-    $query = 'UPDATE users SET pwResetHash = null, pwResetHashGenTs = null WHERE email = :email';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET pwResetHash = null, pwResetHashGenTs = null WHERE email = :email',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->willReturn([0]);
 
-    $plainPw = 'newpassword';
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     
     $user->setEmail($email);
-    $user->setPlainPassword($plainPw);
-    $user->resetPw($token);
+    $user->setPlainPassword('newpassword');
+    $user->resetPw('supersecrettoken');
   }
 
   public function testResetpwIfTheEncoderThrowsAnExceptionItShouldLetItBubbleUp() {
@@ -2214,39 +1459,25 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage('encodePassword test exception msg');
 
     $email = 'test@test.com';
-    $token = 'supersecrettoken';
-    $tokenHash = 'passwordresttokenhash';
-    $tokenGenTs = time() - 0.5*3600;
-    $tokenDuration = 2;
-
-    $query = 'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
+    
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'pwResetHash' => $tokenHash,
-        'pwResetHashGenTs' => $tokenGenTs,
+        'pwResetHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'pwResetHashGenTs' => time() - 0.5*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($token, $tokenHash)
-      ->willReturn(true);
 
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('resetPwTokenDuration')
-      ->willReturn($tokenDuration);
+      ->willReturn(2);
 
     $plainPw = 'newpassword';
-    $pwHash = 'newpasswordhashedversion';
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     
     $this->encoderMock->expects($this->once())
       ->method('encodePassword')
@@ -2255,68 +1486,53 @@ class UserModelTest extends TestCase {
 
     $user->setEmail($email);
     $user->setPlainPassword($plainPw);
-    $user->resetPw($token);
+    $user->resetPw('supersecrettoken');
   }
 
   public function testResetpwIfTheQueryToUpdateWithTheNewPasswordThrowsAnExceptionItShouldLetItBubbleUp() {
     $this->expectException(\Exception::class);
 
     $email = 'test@test.com';
-    $token = 'supersecrettoken';
-    $tokenHash = 'passwordresttokenhash';
-    $tokenGenTs = time() - 0.5*3600;
-    $tokenDuration = 2;
-
-    $query = 'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
+    
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'pwResetHash' => $tokenHash,
-        'pwResetHashGenTs' => $tokenGenTs,
+        'pwResetHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'pwResetHashGenTs' => time() - 0.5*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($token, $tokenHash)
-      ->willReturn(true);
 
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('resetPwTokenDuration')
-      ->willReturn($tokenDuration);
+      ->willReturn(2);
 
     $plainPw = 'newpassword';
-    $pwHash = 'newpasswordhashedversion';
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $pwHash = '$2y$15$dAw27m4ED0vKNJVpK1WZWenichZf1b7thAEL59MHzZErgJD1J5CM6';
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     
     $this->encoderMock->expects($this->once())
       ->method('encodePassword')
       ->with($user, $plainPw)
       ->willReturn($pwHash);
     
-    $query = 'UPDATE users SET password = :pw, pwResetHash = null, pwResetHashGenTs = null WHERE email = :email';
-    $paramData = [
-      [
-        'pw' => [$pwHash, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET password = :pw, pwResetHash = null, pwResetHashGenTs = null WHERE email = :email',
+        [[
+          'pw' => [$pwHash, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->will($this->throwException(new \Exception));
 
     $user->setEmail($email);
     $user->setPlainPassword($plainPw);
-    $user->resetPw($token);
+    $user->resetPw('supersecrettoken');
   }
 
   public function testResetpwIfTheQueryToUpdateWithTheNewPasswordReturnsZeroAffectedRowsItShouldThrowAnExceptionWithACustomMsg() {
@@ -2324,61 +1540,46 @@ class UserModelTest extends TestCase {
     $this->expectExceptionMessage("The new password for the email 'test@test.com' failed to be stored in the DB.");
 
     $email = 'test@test.com';
-    $token = 'supersecrettoken';
-    $tokenHash = 'passwordresttokenhash';
-    $tokenGenTs = time() - 0.5*3600;
-    $tokenDuration = 2;
-
-    $query = 'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL';
-    $paramData = [
-      [
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
+    
     $this->dbInterfaceMock->expects($this->once())
       ->method('select')
-      ->with($query, $paramData)
+      ->with(
+        'SELECT pwResetHash, pwResetHashGenTs FROM users WHERE email = :email AND pwResetHash IS NOT NULL',
+        [['email' => [$email, \PDO::PARAM_STR]]]
+      )
       ->willReturn([[[
-        'pwResetHash' => $tokenHash,
-        'pwResetHashGenTs' => $tokenGenTs,
+        'pwResetHash' => '$2y$15$nxQyMKUw7pQ13h1fn4P1GODkqwKu1rrpCrY.DbjnbQksppM/IjpA6',
+        'pwResetHashGenTs' => time() - 0.5*3600,
       ]]]);
-    
-    $this->utilsMock->expects($this->once())
-      ->method('isHashValid')
-      ->with($token, $tokenHash)
-      ->willReturn(true);
 
     $this->containerMock->expects($this->once())
       ->method('getParameter')
       ->with('resetPwTokenDuration')
-      ->willReturn($tokenDuration);
+      ->willReturn(2);
 
     $plainPw = 'newpassword';
-    $pwHash = 'newpasswordhashedversion';
-    $user = new UserModel($this->dbInterfaceMock, $this->utilsMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
+    $pwHash = '$2y$15$dAw27m4ED0vKNJVpK1WZWenichZf1b7thAEL59MHzZErgJD1J5CM6';
+    $user = new UserModel($this->dbInterfaceMock, $this->emailInterfaceMock, $this->encoderMock, $this->containerMock);
     
     $this->encoderMock->expects($this->once())
       ->method('encodePassword')
       ->with($user, $plainPw)
       ->willReturn($pwHash);
     
-    $query = 'UPDATE users SET password = :pw, pwResetHash = null, pwResetHashGenTs = null WHERE email = :email';
-    $paramData = [
-      [
-        'pw' => [$pwHash, \PDO::PARAM_STR],
-        'email' => [$email, \PDO::PARAM_STR],
-      ],
-    ];
-
     $this->dbInterfaceMock->expects($this->once())
       ->method('change')
-      ->with($query, $paramData)
+      ->with(
+        'UPDATE users SET password = :pw, pwResetHash = null, pwResetHashGenTs = null WHERE email = :email',
+        [[
+          'pw' => [$pwHash, \PDO::PARAM_STR],
+          'email' => [$email, \PDO::PARAM_STR],
+        ]]
+      )
       ->willReturn([0]);
 
     $user->setEmail($email);
     $user->setPlainPassword($plainPw);
-    $user->resetPw($token);
+    $user->resetPw('supersecrettoken');
   }
 }
 

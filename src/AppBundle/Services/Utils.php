@@ -9,7 +9,7 @@ class Utils {
   * @return array The token and its generated timestamp in the format
   *               ['token'=>string, 'ts'=>int]
   */
-  public function generateToken(): array {
+  public static function generateToken(): array {
     return([
       'token' => bin2hex(openssl_random_pseudo_bytes(16)),
       'ts' => time()
@@ -21,12 +21,18 @@ class Utils {
   *
   * @param string $rawString The string to hash.
   *
-  * @return string The hashed string or en empty string on failure.
+  * @return string The hashed string.
+  *
+  * @throws \Exception if the hash fails to be created.
   */
-  public function createHash(string $rawString): string {
+  public static function createHash(string $rawString): string {
     $hash = password_hash($rawString, PASSWORD_DEFAULT, ['cost' => 15]);
 
-    return(($hash === false ? '' : $hash));
+    if ($hash === false) {
+      throw new \Exception('The hash failed to be created.');
+    }
+
+    return($hash);
   }
 
   /**
@@ -37,7 +43,7 @@ class Utils {
   *
   * @return bool True if the string matches the hash or False otherwise.
   */
-  public function isHashValid(string $rawString, string $hash): bool {
+  public static function isHashValid(string $rawString, string $hash): bool {
     return(password_verify($rawString, $hash));
   }
 }

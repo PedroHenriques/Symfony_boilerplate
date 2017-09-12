@@ -70,29 +70,29 @@ class UserModel extends Model implements AdvancedUserInterface, EquatableInterfa
   * @Assert\Type(type="array")
   */
   private $roles;
-  
+
   private $dbInterface;
-  private $utils;
   private $emailInterface;
   private $encoder;
   private $container;
 
   /**
   * @param DbInterface $db An instance of a DbInterface implementing class
-  * @param Utils $utils An instance of Utils class
   * @param EmailInterface $email An instance of a EmailInterface implementing class
   * @param UserPasswordEncoderInterface $encoder An instance of a UserPasswordEncoderInterface implementing class
   * @param ContainerInterface $container An instance of a ContainerInterface implementing class
   */
-  public function __construct(DbInterface $db, Utils $utils, EmailInterface $email,
+  public function __construct(DbInterface $db, EmailInterface $email,
   UserPasswordEncoderInterface $encoder, ContainerInterface $container) {
     $this->dbInterface = $db;
-    $this->utils = $utils;
     $this->emailInterface = $email;
     $this->encoder = $encoder;
     $this->container = $container;
   }
 
+  /**
+  * @throws \Exception if the provided ID couldn't be set
+  */
   protected function setId($id): void {
     if ($this->id !== null) {
       throw new \Exception('UserModel already has an ID.');
@@ -286,7 +286,7 @@ class UserModel extends Model implements AdvancedUserInterface, EquatableInterfa
   * @throws \Exception with an error message if any major steps fail.
   */
   public function register(): bool {
-    $query = '(select count(id) as count from users where userName=:userName)'.
+    $query = '(select count(id) as count from users where userName=:userName) '.
       'union all (select count(id) as count from users where email=:email)';
     $paramData = [
       [
@@ -314,15 +314,8 @@ class UserModel extends Model implements AdvancedUserInterface, EquatableInterfa
 
     $this->setCreated(time());
     
-    $activationTokenData = $this->utils->generateToken();
-
-    $activationTokenHash = $this->utils->createHash($activationTokenData['token']);
-
-    if ($activationTokenHash === '') {
-      throw new \Exception(
-        'An error occurred while creating the hashed activation token.'
-      );
-    }
+    $activationTokenData = Utils::generateToken();
+    $activationTokenHash = Utils::createHash($activationTokenData['token']);
 
     $query = 'INSERT INTO users '.
       "VALUES(null,:userName,:email,:password,0,1,'${activationTokenHash}',".
@@ -367,7 +360,7 @@ class UserModel extends Model implements AdvancedUserInterface, EquatableInterfa
       );
     }
 
-    if (!$this->utils->isHashValid($token, $resultSet[0][0]['activationHash'])) {
+    if (!Utils::isHashValid($token, $resultSet[0][0]['activationHash'])) {
       throw new \Exception(
         "The activation token provided for the email '{$this->getEmail()}' is ".
         'not correct.'
@@ -428,35 +421,30 @@ class UserModel extends Model implements AdvancedUserInterface, EquatableInterfa
       throw new \Exception("The token type '${tokenType}' is not valid.");
     }
 
-    $tokenData = $this->utils->generateToken();
+    $tokenData = Utils::generateToken();
+    $tokenHash = Utils::createHash($tokenData['token']);
 
-    $tokenHash = $this->utils->createHash($tokenData['token']);
+    $query = 'UPDATE users SET '.($tokenType === 'activation' ? 'isActive = 0, ' : '').
+      "${tokenType}Hash = :hash, ${tokenType}HashGenTs = :hashTs WHERE email = :email";
+    $paramData = [
+      [
+        'hash' => [$tokenHash, \PDO::PARAM_STR],
+        'hashTs' => [$tokenData['ts'], \PDO::PARAM_INT],
+        'email' => [$this->getEmail(), \PDO::PARAM_STR],
+      ],
+    ];
 
-    if ($tokenHash === '') {
-      throw new \Exception('The hash of the new token couldn\'t be generated.');
-    } else {
-      $query = 'UPDATE users SET '.($tokenType === 'activation' ? 'isActive = 0, ' : '').
-        "${tokenType}Hash = :hash, ${tokenType}HashGenTs = :hashTs WHERE email = :email";
-      $paramData = [
-        [
-          'hash' => [$tokenHash, \PDO::PARAM_STR],
-          'hashTs' => [$tokenData['ts'], \PDO::PARAM_INT],
-          'email' => [$this->getEmail(), \PDO::PARAM_STR],
-        ],
-      ];
+    $updatedRows = $this->dbInterface->change($query, $paramData);
 
-      $updatedRows = $this->dbInterface->change($query, $paramData);
+    if ($updatedRows[0] !== 1) {
+      throw new \Exception(
+        'The database failed to be updated with the new token.'
+      );
+    }
 
-      if ($updatedRows[0] !== 1) {
-        throw new \Exception(
-          'The database failed to be updated with the new token.'
-        );
-      }
-
-      if (!$this->emailInterface->{"${tokenType}Email"}($this->getEmail(),
-      $tokenData['token'])) {
-        throw new \Exception('The email with the new token failed to be sent.');
-      }
+    if (!$this->emailInterface->{"${tokenType}Email"}($this->getEmail(),
+    $tokenData['token'])) {
+      throw new \Exception('The email with the new token failed to be sent.');
     }
   }
 
@@ -537,7 +525,7 @@ class UserModel extends Model implements AdvancedUserInterface, EquatableInterfa
       );
     }
 
-    if (!$this->utils->isHashValid($token, $resultSet[0][0]['pwResetHash'])) {
+    if (!Utils::isHashValid($token, $resultSet[0][0]['pwResetHash'])) {
       throw new \Exception(
         "The password reset token provided for the email '{$this->getEmail()}' ".
         'is not correct.'

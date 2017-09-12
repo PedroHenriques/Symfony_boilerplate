@@ -209,9 +209,9 @@ AppBundle\Services\EmailInterface:
 The `Utils` class (AppBundle/Services/Utils.php) provides utility methods that can be used when needed, including
 
 ```php
-public function generateToken(): array;
-public function createHash(string $rawString): string;
-public function isHashValid(string $rawString, string $hash): bool;
+public static function generateToken(): array;
+public static function createHash(string $rawString): string;
+public static function isHashValid(string $rawString, string $hash): bool;
 ```
 
 - **`generateToken()`**:

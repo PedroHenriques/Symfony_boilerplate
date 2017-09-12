@@ -2,7 +2,7 @@
 
 namespace tests\unit\AppBundle\Services;
 
-use AppBundle\Services\{DbHandler};
+use AppBundle\Services\DbHandler;
 use AppBundle\Model\{UserModel, Model, UserModelFactory};
 
 use PHPUnit\Framework\TestCase;
